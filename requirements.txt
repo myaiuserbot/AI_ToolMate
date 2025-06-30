@@ -1,0 +1,6 @@
+flask
+python-dotenv
+twilio
+google-cloud-bigquery
+gunicorn
+openai
