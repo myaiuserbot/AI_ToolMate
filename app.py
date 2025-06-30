@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
-from src.bot.utils import (
+from utils import (
     get_language_prompt,
     get_greeting_message,
     get_default_response,
@@ -95,7 +95,7 @@ def webhook():
         SELECT tool_name, use_case, affiliate_link, affiliate_amount
         FROM `{os.getenv('GOOGLE_CLOUD_PROJECT_ID')}.{dataset_id}.{table_id}`
         WHERE category LIKE '%{category}%' AND affiliate_link IS NOT NULL
-        ORDER BY affiliate_amount DESC
+        ORDER BY CAST(affiliate_amount AS FLOAT64) DESC
         LIMIT 3
         """
         query_job = bq_client.query(query)
@@ -109,36 +109,4 @@ def webhook():
     return str(resp)
 
 if __name__ == "__main__":
-    # Local testing
-    test_number = "whatsapp:+919876543210"  # Replace with your test number
-    user_sessions[test_number] = "hinglish"
-    test_message = "SEO tools"
-    
-    try:
-        chatgpt_response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": (
-                    "Friendly WhatsApp bot for Indian users. Reply in Hinglish (English script). "
-                    "Map query to a category like SEO & Content Optimization."
-                )},
-                {"role": "user", "content": test_message}
-            ],
-            max_tokens=50
-        )
-        category = extract_category(chatgpt_response.choices[0].message.content.lower())
-        query = f"""
-        SELECT tool_name, use_case, affiliate_link, affiliate_amount
-        FROM `{os.getenv('GOOGLE_CLOUD_PROJECT_ID')}.{dataset_id}.{table_id}`
-        WHERE category LIKE '%{category}%' AND affiliate_link IS NOT NULL
-        ORDER BY affiliate_amount DESC
-        LIMIT 3
-        """
-        query_job = bq_client.query(query)
-        tools = list(query_job.result())
-        response = format_response(tools, category, "hinglish")
-        print(f"Test Response:\n{response}")
-    except Exception as e:
-        print(f"Test Error: {str(e)}")
-    
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
